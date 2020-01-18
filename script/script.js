@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const wishListBtn = document.getElementById('wishlist');
   const goodsWrapper = document.querySelector('.goods-wrapper');
   const cart = document.querySelector('.cart');
+  const category = document.querySelector('.category');
 
   const creatCardGoods = (id, title, price, img) => {
     const card = document.createElement('div');
@@ -25,28 +26,59 @@ document.addEventListener('DOMContentLoaded', () => {
                       </div>`;
 
     return card;
-
   };
-  goodsWrapper.appendChild(creatCardGoods(1, 'Дартс', 2000, 'img/temp/archer.jpg'));
-  goodsWrapper.appendChild(creatCardGoods(2, 'Фламинго', 3000, 'img/temp/flamingo.jpg'));
-  goodsWrapper.appendChild(creatCardGoods(3, 'Носки', 333, 'img/temp/socks.jpg'));
 
+// созданные вручную товары не показываются, тк скрыты в const renderCart = (goods)... (см ниже).
+goodsWrapper.append(creatCardGoods(1, 'Дартс', 2000, 'img/temp/archer.jpg'));
+goodsWrapper.append(creatCardGoods(2, 'Фламинго', 3000, 'img/temp/flamingo.jpg'));
+goodsWrapper.append(creatCardGoods(3, 'Носки', 333, 'img/temp/socks.jpg'));
 
-const closeCart = (event) => {
-    const target = event.target;
-    if (target === cart || target.classList.contains('cart-close')) {
-        cart.style.display = '';
-    }
-   
-};
+  const closeCart = (event) => {
+      const target = event.target;
+      if (target === cart ||
+          target.classList.contains('cart-close') ||
+          event.keyCode === 27) {
+          cart.style.display = '';
+          document.removeEventListener('keyup', closeCart);
+      }
+  };
 
-const openCart = () => {
-    cart.style.display = 'flex';
-};
+  const openCart = (event) => {
+      event.preventDefault();
+      cart.style.display = 'flex';
+      document.addEventListener('keyup', closeCart);
+  };
 
+  const renderCart = (goods) => {
+    goodsWrapper.textContent = ''; //скрываем старые товары, созданные вручную
+    goods.forEach(({ id, title, price, imgMin }) => {
+        goodsWrapper.append(creatCardGoods(id, title, price, imgMin))
+    });
+  };
+
+  const getGoods = (handler, filter) => {
+    fetch('db/db.json')
+        .then((response) => response.json())
+        .then(filter)
+        .then(handler);
+  };
+
+  const randomSort = (item) => item.sort(() => Math.random() - 0.5);
+
+  const chooseCategory = (event) => {
+      event.preventDefault();
+      const target = event.target;
+
+      if (target.classList.contains('category-item')) {
+        const category = target.dataset.category;
+        getGoods(renderCart, (goods) => goods.filter(item => item.category.includes(category)));
+      }
+  };
 
 cartBtn.addEventListener('click', openCart);
 cart.addEventListener('click', closeCart);
+category.addEventListener('click', chooseCategory);
 
+getGoods(renderCart, randomSort);
 
 });
